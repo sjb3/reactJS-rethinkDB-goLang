@@ -1,0 +1,19 @@
+{
+  "name": "reatime_app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sjb3/reactJS-rethinkDB-goLang.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sjb3/reactJS-rethinkDB-goLang/issues"
+  },
+  "homepage": "https://github.com/sjb3/reactJS-rethinkDB-goLang#readme"
+}
