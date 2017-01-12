@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import ChannelSection from './channels/ChannelSection';
+import ChannelSection from './channels/ChannelSection.jsx';
 
 class App extends Component{
   constructor(props){
@@ -29,4 +29,4 @@ class App extends Component{
   }
 }
 
-export default App 
+export default App

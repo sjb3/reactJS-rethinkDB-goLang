@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 
-
 class Channel extends React.Component{
 
   onClick(e){
