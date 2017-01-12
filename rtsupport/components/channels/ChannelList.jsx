@@ -17,7 +17,7 @@ render(){
 }
 
 ChannelList.propTypes = {
-  channels: React.PropTypes.array.isRequired
+  channels: React.PropTypes.array.isRequired,
   setChannel: React.PropTypes.func.isRequired
 }
 
