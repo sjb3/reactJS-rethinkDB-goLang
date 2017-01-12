@@ -15,5 +15,9 @@
   "bugs": {
     "url": "https://github.com/sjb3/reactJS-rethinkDB-goLang/issues"
   },
-  "homepage": "https://github.com/sjb3/reactJS-rethinkDB-goLang#readme"
+  "homepage": "https://github.com/sjb3/reactJS-rethinkDB-goLang#readme",
+  "dependencies": {
+    "react": "^15.4.2",
+    "react-dom": "^15.4.2"
+  }
 }
