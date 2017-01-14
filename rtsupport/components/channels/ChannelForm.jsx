@@ -20,9 +20,7 @@ class ChannelForm extends Component{
                   ref='channel'
                 />
               </div>
-
              </form>
-
         )
     }
 }

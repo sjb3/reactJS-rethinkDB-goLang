@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
-import ChannelForm from './channelForm.jsx';
-import ChannelList from './channelList.jsx';
+import ChannelForm from './ChannelForm.jsx';
+import ChannelList from './ChannelList.jsx';
 
 class ChannelSection extends Component{
     render(){
