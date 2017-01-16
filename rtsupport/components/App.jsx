@@ -23,9 +23,8 @@ class App extends Component {
       this.setState({activeChannel});
       //TODO: Get Channels Messages
   }
-/////////////////////////////////////
 
-  setUser(name){
+  setUserName(name){
     let {users} = this.state;
     users.push({id: users.length, name});
     this.setState({users});
@@ -43,7 +42,7 @@ class App extends Component {
              />
               <UserSection
               {...this.state}
-                setUserName = {this.setUser.bind(this)}
+                setUserName = {this.setUserName.bind(this)}
               />
             </div>
           </div>
