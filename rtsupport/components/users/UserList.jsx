@@ -5,7 +5,7 @@ class UserList extends Component {
   render(){
     return(
       <ul>{
-        this.props.users.map ( user => {
+        this.props.users.map( user => {
           return (
             <User
               key={user.id}
