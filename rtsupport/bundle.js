@@ -21499,6 +21499,8 @@
 	  value: true
 	});
 
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
@@ -21517,6 +21519,18 @@
 
 	var _channelsChannelSectionJsx2 = _interopRequireDefault(_channelsChannelSectionJsx);
 
+	var _usersUserSectionJsx = __webpack_require__(183);
+
+	var _usersUserSectionJsx2 = _interopRequireDefault(_usersUserSectionJsx);
+
+	var _messagesMessageSectionJsx = __webpack_require__(187);
+
+	var _messagesMessageSectionJsx2 = _interopRequireDefault(_messagesMessageSectionJsx);
+
+	var _socketJs = __webpack_require__(192);
+
+	var _socketJs2 = _interopRequireDefault(_socketJs);
+
 	var App = (function (_Component) {
 	  _inherits(App, _Component);
 
@@ -21525,33 +21539,181 @@
 
 	    _get(Object.getPrototypeOf(App.prototype), 'constructor', this).call(this, props);
 	    this.state = {
-	      channels: []
+	      channels: [],
+	      users: [],
+	      messages: [],
+	      activeChannel: {},
+	      connected: false
 	    };
 	  }
 
 	  _createClass(App, [{
+	    key: 'componentDidMount',
+	    value: function componentDidMount() {
+	      var ws = new WebScoket('ws://localhost:4000');
+	      var socket = this.socket = new _socketJs2['default'](ws);
+	      socket.on('connect', this.onConnect.bind(this));
+	      socket.on('disconnect', this.onDisconnect.bind(this));
+	      socket.on('channel add', this.onAddChannel.bind(this));
+	      socket.on('user add', this.onAddUser.bind(this));
+	      socket.on('user edit', this.onEditUser.bind(this));
+	      socket.on('user remove', this.onRemoveUser.bind(this));
+	      socket.on('message add', this.onMessageAdd.bind(this));
+	      // let ws = this.ws = new WebSocket('ws://echo.websocket.org');
+	      // ws.onmessage = this.message.bind(this);
+	      // ws.onopen = this.open.bind(this);
+	      // ws.onclose = this.close.bind(this);
+	    }
+	  }, {
+	    key: 'onMessageAdd',
+	    value: function onMessageAdd(message) {
+	      // let {message} = this.state;
+	      messages.push(message);
+	      this.setState({ messages: messages });
+	    }
+	  }, {
+	    key: 'onRemoveUser',
+	    value: function onRemoveUser(removeUser) {
+	      var users = this.state.users;
+
+	      users = users.filter(function (user) {
+	        return user.id !== removeUser.id;
+	      });
+	      this.setState({ users: users });
+	    }
+	  }, {
+	    key: 'onEditUser',
+	    value: function onEditUser(editUser) {
+	      var users = this.state.users;
+
+	      users = users.map(function (user) {
+	        if (editUser.id === user.id) {
+	          return editUser;
+	        }
+	        return user;
+	      });
+	      this.setState({ users: users });
+	    }
+	  }, {
+	    key: 'onAddUser',
+	    value: function onAddUser(user) {
+	      var users = this.state.users;
+
+	      users.push(user);
+	      this.setState({ users: users });
+	    }
+	  }, {
+	    key: 'onConnect',
+	    value: function onConnect() {
+	      this.setState({ connected: true });
+	      this.socket.emit('channel subscribe');
+	      this.socket.emit('user subscribe');
+	    }
+	  }, {
+	    key: 'onDisconnect',
+	    value: function onDisconnect() {
+	      this.setState({ connected: false });
+	    }
+	  }, {
+	    key: 'message',
+	    value: function message(e) {
+	      var event = JSON.parse(e.data);
+	      if (event.name === 'channel add') {
+	        this.newChannel(event.data);
+	      }
+	    }
+	  }, {
+	    key: 'open',
+	    value: function open() {
+	      this.setState({ connected: true });
+	    }
+	  }, {
+	    key: 'close',
+	    value: function close() {
+	      this.setState({ connected: false });
+	    }
+	  }, {
+	    key: 'onAddChannel',
+	    value: function onAddChannel(channel) {
+	      var channels = this.state.channels;
+
+	      channels.push(channel);
+	      this.setState({ channels: channels });
+	    }
+	  }, {
 	    key: 'addChannel',
 	    value: function addChannel(name) {
 	      var channels = this.state.channels;
 
-	      channels.push({ id: channels.length, name: name });
-	      this.setState({ channels: channels });
-	      //TODO: send to server
+	      // channels.push({
+	      //     id: channels.length, name
+	      // });
+	      // this.setState({channels});
+	      //TODO: Send to Server
+	      var msg = {
+	        name: 'channel add',
+	        data: {
+	          id: channels.length,
+	          name: name
+	        }
+	      };
+	      this.ws.send(JSON.stringify(msg));
 	    }
 	  }, {
 	    key: 'setChannel',
 	    value: function setChannel(activeChannel) {
 	      this.setState({ activeChannel: activeChannel });
+	      this.socket.emit('message unsubscribe');
+	      this.setState({ messages: [] });
+	      this.socket.emit('message subscribe', { channelId: activeChannel.id });
 	      //TODO: Get Channels Messages
+	    }
+	  }, {
+	    key: 'setUserName',
+	    value: function setUserName(name) {
+	      // let {users} = this.state;
+	      // users.push({id: users.length, name});
+	      // this.setState({users});
+	      //TODO: Get Channels Messages
+	      this.socket.emit('channel add', { name: name });
+	    }
+	  }, {
+	    key: 'addMessage',
+	    value: function addMessage(body) {
+	      // let {message, users} = this.state;
+	      // let createdAt = new Date;
+	      // let author = users.length > 0 ? users[0].name: 'anon';
+
+	      // messages.push({id: messages.length, body, createdAt, author});
+	      // this.setState({messages});
+	      //TODO: send to server
+	      var activeChannel = this.state.activeChannel;
+
+	      this.socket.emit('message add', { channelId: activeChannel.id, body: body });
 	    }
 	  }, {
 	    key: 'render',
 	    value: function render() {
-	      return _react2['default'].createElement(_channelsChannelSectionJsx2['default'], {
-	        channels: this.state.channels,
-	        addChannels: this.addChannels.bind(this),
-	        setChannel: this.setChannel.bind(this)
-	      });
+	      return _react2['default'].createElement(
+	        'div',
+	        { className: 'app' },
+	        _react2['default'].createElement(
+	          'div',
+	          { className: 'nav' },
+	          _react2['default'].createElement(_channelsChannelSectionJsx2['default'],
+	          // channels = {this.state.channels}
+	          _extends({}, this.state, {
+	            addChannel: this.addChannel.bind(this),
+	            setChannel: this.setChannel.bind(this)
+	          })),
+	          _react2['default'].createElement(_usersUserSectionJsx2['default'], _extends({}, this.state, {
+	            setUserName: this.setUserName.bind(this)
+	          })),
+	          _react2['default'].createElement(_messagesMessageSectionJsx2['default'], _extends({}, this.state, {
+	            addMessage: this.addMessage.bind(this)
+	          }))
+	        )
+	      );
 	    }
 	  }]);
 
@@ -21607,9 +21769,22 @@
 	    value: function render() {
 	      return _react2['default'].createElement(
 	        'div',
-	        null,
-	        _react2['default'].createElement(_ChannelListJsx2['default'], this.props),
-	        _react2['default'].createElement(_ChannelFormJsx2['default'], this.props)
+	        { className: 'support panel panel-primary' },
+	        _react2['default'].createElement(
+	          'div',
+	          { className: 'panel-heading' },
+	          _react2['default'].createElement(
+	            'strong',
+	            null,
+	            'Channels'
+	          )
+	        ),
+	        _react2['default'].createElement(
+	          'div',
+	          { className: 'panel-body channels' },
+	          _react2['default'].createElement(_ChannelListJsx2['default'], this.props),
+	          _react2['default'].createElement(_ChannelFormJsx2['default'], this.props)
+	        )
 	      );
 	    }
 	  }]);
@@ -21620,14 +21795,12 @@
 	ChannelSection.propTypes = {
 	  channels: _react2['default'].PropTypes.array.isRequired,
 	  setChannel: _react2['default'].PropTypes.func.isRequired,
-	  addChannel: _react2['default'].Proptypes.func.isRequired
+	  addChannel: _react2['default'].PropTypes.func.isRequired,
+	  activeChannel: _react2['default'].PropTypes.object.isRequired
 	};
 
 	exports['default'] = ChannelSection;
 	module.exports = exports['default'];
-
-	// channels={this.props.channels}these are replaced by above
-	// setChannel={this.props.setChannel}
 
 /***/ },
 /* 180 */
@@ -21636,7 +21809,7 @@
 	'use strict';
 
 	Object.defineProperty(exports, '__esModule', {
-	  value: true
+	    value: true
 	});
 
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -21654,39 +21827,48 @@
 	var _react2 = _interopRequireDefault(_react);
 
 	var ChannelForm = (function (_Component) {
-	  _inherits(ChannelForm, _Component);
+	    _inherits(ChannelForm, _Component);
 
-	  function ChannelForm() {
-	    _classCallCheck(this, ChannelForm);
+	    function ChannelForm() {
+	        _classCallCheck(this, ChannelForm);
 
-	    _get(Object.getPrototypeOf(ChannelForm.prototype), 'constructor', this).apply(this, arguments);
-	  }
-
-	  _createClass(ChannelForm, [{
-	    key: 'onSubmit',
-	    value: function onSubmit(e) {
-	      e.preventDefault();
-	      var node = this.refs.channel;
-	      var channelName = node.value;
-	      this.props.addChannel(channeName);
-	      node.value = '';
+	        _get(Object.getPrototypeOf(ChannelForm.prototype), 'constructor', this).apply(this, arguments);
 	    }
-	  }, {
-	    key: 'render',
-	    value: function render() {
-	      return _react2['default'].createElement(
-	        'form',
-	        { onSubmit: this.onSubmit.bind(this) },
-	        _react2['default'].createElement('input', { type: 'text', ref: 'channel' })
-	      );
-	    }
-	  }]);
 
-	  return ChannelForm;
+	    _createClass(ChannelForm, [{
+	        key: 'onSubmit',
+	        value: function onSubmit(e) {
+	            e.preventDefault();
+	            var node = this.refs.channel;
+	            var channelName = node.value;
+	            this.props.addChannel(channelName);
+	            node.value = '';
+	        }
+	    }, {
+	        key: 'render',
+	        value: function render() {
+	            return _react2['default'].createElement(
+	                'form',
+	                { onSubmit: this.onSubmit.bind(this) },
+	                _react2['default'].createElement(
+	                    'div',
+	                    { className: 'form-group' },
+	                    _react2['default'].createElement('input', {
+	                        className: 'form-control',
+	                        placeholder: 'Add Channel',
+	                        type: 'text',
+	                        ref: 'channel'
+	                    })
+	                )
+	            );
+	        }
+	    }]);
+
+	    return ChannelForm;
 	})(_react.Component);
 
 	ChannelForm.propTypes = {
-	  addChannel: _react2['default'].PropTypes.func.isRequired
+	    addChannel: _react2['default'].PropTypes.func.isRequired
 	};
 
 	exports['default'] = ChannelForm;
@@ -21699,8 +21881,10 @@
 	'use strict';
 
 	Object.defineProperty(exports, '__esModule', {
-	  value: true
+	    value: true
 	});
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
@@ -21721,38 +21905,41 @@
 	var _ChannelJsx2 = _interopRequireDefault(_ChannelJsx);
 
 	var ChannelList = (function (_Component) {
-	  _inherits(ChannelList, _Component);
+	    _inherits(ChannelList, _Component);
 
-	  function ChannelList() {
-	    _classCallCheck(this, ChannelList);
+	    function ChannelList() {
+	        _classCallCheck(this, ChannelList);
 
-	    _get(Object.getPrototypeOf(ChannelList.prototype), 'constructor', this).apply(this, arguments);
-	  }
-
-	  _createClass(ChannelList, [{
-	    key: 'render',
-	    value: function render() {
-	      var _this = this;
-
-	      return _react2['default'].createElement(
-	        'ul',
-	        null,
-	        this.props.channels.map(function (chan) {
-	          _react2['default'].createElement(_ChannelJsx2['default'], {
-	            channel: chan,
-	            setChannel: _this.props.setChannel
-	          });
-	        })
-	      );
+	        _get(Object.getPrototypeOf(ChannelList.prototype), 'constructor', this).apply(this, arguments);
 	    }
-	  }]);
 
-	  return ChannelList;
+	    _createClass(ChannelList, [{
+	        key: 'render',
+	        value: function render() {
+	            var _this = this;
+
+	            return _react2['default'].createElement(
+	                'ul',
+	                null,
+	                this.props.channels.map(function (chan) {
+	                    return _react2['default'].createElement(_ChannelJsx2['default'], _extends({
+	                        channel: chan,
+	                        key: chan.id
+	                        // setChannel={this.props.setChannel}
+	                        // activeChannel={this.props.activeChannel}
+	                    }, _this.props));
+	                })
+	            );
+	        }
+	    }]);
+
+	    return ChannelList;
 	})(_react.Component);
 
 	ChannelList.propTypes = {
-	  channels: _react2['default'].PropTypes.array.isRequired,
-	  setChannel: _react2['default'].PropTypes.func.isRequired
+	    channels: _react2['default'].PropTypes.array.isRequired,
+	    setChannel: _react2['default'].PropTypes.func.isRequired,
+	    activeChannel: _react2['default'].PropTypes.object.isRequired
 	};
 
 	exports['default'] = ChannelList;
@@ -21760,6 +21947,81 @@
 
 /***/ },
 /* 182 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	    value: true
+	});
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var Channel = (function (_React$Component) {
+	    _inherits(Channel, _React$Component);
+
+	    function Channel() {
+	        _classCallCheck(this, Channel);
+
+	        _get(Object.getPrototypeOf(Channel.prototype), 'constructor', this).apply(this, arguments);
+	    }
+
+	    _createClass(Channel, [{
+	        key: 'onClick',
+	        value: function onClick(e) {
+	            e.preventDefault();
+	            var _props = this.props;
+	            var setChannel = _props.setChannel;
+	            var channel = _props.channel;
+
+	            setChannel(channel);
+	        }
+	    }, {
+	        key: 'render',
+	        value: function render() {
+	            var _props2 = this.props;
+	            var channel = _props2.channel;
+	            var activeChannel = _props2.activeChannel;
+
+	            var active = channel === activeChannel ? 'active' : '';
+	            return _react2['default'].createElement(
+	                'li',
+	                { className: active },
+	                _react2['default'].createElement(
+	                    'a',
+	                    { onClick: this.onClick.bind(this) },
+	                    this.props.channel.name
+	                )
+	            );
+	        }
+	    }]);
+
+	    return Channel;
+	})(_react2['default'].Component);
+
+	Channel.propTypes = {
+	    channel: _react2['default'].PropTypes.object.isRequired,
+	    setChannel: _react2['default'].PropTypes.func.isRequired,
+	    activeChannel: _react2['default'].PropTypes.object.isRequired
+	};
+
+	exports['default'] = Channel;
+	module.exports = exports['default'];
+
+/***/ },
+/* 183 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -21782,52 +22044,1276 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var Channel = (function (_React$Component) {
-	  _inherits(Channel, _React$Component);
+	var _UserFormJsx = __webpack_require__(184);
 
-	  function Channel() {
-	    _classCallCheck(this, Channel);
+	var _UserFormJsx2 = _interopRequireDefault(_UserFormJsx);
 
-	    _get(Object.getPrototypeOf(Channel.prototype), 'constructor', this).apply(this, arguments);
+	var _UserListJsx = __webpack_require__(185);
+
+	var _UserListJsx2 = _interopRequireDefault(_UserListJsx);
+
+	var UserSection = (function (_Component) {
+	  _inherits(UserSection, _Component);
+
+	  function UserSection() {
+	    _classCallCheck(this, UserSection);
+
+	    _get(Object.getPrototypeOf(UserSection.prototype), 'constructor', this).apply(this, arguments);
 	  }
 
-	  _createClass(Channel, [{
-	    key: 'onClick',
-	    value: function onClick(e) {
-	      e.preventDefault();
-	      var _props = this.props;
-	      var setChannel = _props.setChannel;
-	      var channel = _props.channel;
-
-	      setChannel(channel);
-	    }
-	  }, {
+	  _createClass(UserSection, [{
 	    key: 'render',
 	    value: function render() {
-	      var channel = this.props.channel;
-
 	      return _react2['default'].createElement(
-	        'li',
-	        null,
+	        'div',
+	        { className: 'support panel panel-primary' },
 	        _react2['default'].createElement(
-	          'a',
-	          { onClick: this.onClick.bind(this) },
-	          channel.name
+	          'div',
+	          { className: 'panel-heading' },
+	          _react2['default'].createElement(
+	            'strong',
+	            null,
+	            'Users'
+	          )
+	        ),
+	        _react2['default'].createElement(
+	          'div',
+	          { className: 'panel-body users' },
+	          _react2['default'].createElement(_UserListJsx2['default'], this.props),
+	          _react2['default'].createElement(_UserFormJsx2['default'], this.props)
 	        )
 	      );
 	    }
 	  }]);
 
-	  return Channel;
-	})(_react2['default'].Component);
+	  return UserSection;
+	})(_react.Component);
 
-	Channel.propTypes = {
-	  channel: _react2['default'].PropTypes.object.isRequired,
-	  setChannel: _react2['default'].PropTypes.func.isRequired
+	UserSection.propTypes = {
+	  users: _react2['default'].PropTypes.array.isRequired,
+	  setUserName: _react2['default'].PropTypes.func.isRequired
 	};
 
-	exports['default'] = Channel;
+	exports['default'] = UserSection;
 	module.exports = exports['default'];
+
+/***/ },
+/* 184 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var UserForm = (function (_Component) {
+	  _inherits(UserForm, _Component);
+
+	  function UserForm() {
+	    _classCallCheck(this, UserForm);
+
+	    _get(Object.getPrototypeOf(UserForm.prototype), 'constructor', this).apply(this, arguments);
+	  }
+
+	  _createClass(UserForm, [{
+	    key: 'onSubmit',
+	    value: function onSubmit(e) {
+	      e.preventDefault();
+	      var node = this.refs.userName;
+	      var userName = node.value;
+	      this.props.setUserName(userName);
+	      node.value = '';
+	    }
+	  }, {
+	    key: 'render',
+	    value: function render() {
+	      return _react2['default'].createElement(
+	        'form',
+	        { onSubmit: this.onSubmit.bind(this) },
+	        _react2['default'].createElement(
+	          'div',
+	          { className: 'form-group' },
+	          _react2['default'].createElement('input', {
+	            className: 'form-control',
+	            placeholder: 'Ser Your Name',
+	            type: 'text',
+	            ref: 'userName'
+	          })
+	        )
+	      );
+	    }
+	  }]);
+
+	  return UserForm;
+	})(_react.Component);
+
+	UserForm.propTypes = {
+	  setUserName: _react2['default'].PropTypes.func.isRequired
+	};
+
+	exports['default'] = UserForm;
+	module.exports = exports['default'];
+
+/***/ },
+/* 185 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _UserJsx = __webpack_require__(186);
+
+	var _UserJsx2 = _interopRequireDefault(_UserJsx);
+
+	var UserList = (function (_Component) {
+	  _inherits(UserList, _Component);
+
+	  function UserList() {
+	    _classCallCheck(this, UserList);
+
+	    _get(Object.getPrototypeOf(UserList.prototype), 'constructor', this).apply(this, arguments);
+	  }
+
+	  _createClass(UserList, [{
+	    key: 'render',
+	    value: function render() {
+	      return _react2['default'].createElement(
+	        'ul',
+	        null,
+	        this.props.users.map(function (user) {
+	          return _react2['default'].createElement(_UserJsx2['default'], {
+	            key: user.id,
+	            user: user
+	          });
+	        })
+	      );
+	    }
+	  }]);
+
+	  return UserList;
+	})(_react.Component);
+
+	UserList.propTypes = {
+	  users: _react2['default'].PropTypes.array.isRequired
+	};
+
+	exports['default'] = UserList;
+	module.exports = exports['default'];
+
+/***/ },
+/* 186 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var User = (function (_React$Component) {
+	  _inherits(User, _React$Component);
+
+	  function User() {
+	    _classCallCheck(this, User);
+
+	    _get(Object.getPrototypeOf(User.prototype), 'constructor', this).apply(this, arguments);
+	  }
+
+	  _createClass(User, [{
+	    key: 'render',
+	    value: function render() {
+	      return _react2['default'].createElement(
+	        'li',
+	        null,
+	        this.props.user.name
+	      );
+	    }
+	  }]);
+
+	  return User;
+	})(_react2['default'].Component);
+
+	User.propTypes = {
+	  user: _react2['default'].PropTypes.object.isRequired
+	};
+
+	exports['default'] = User;
+	module.exports = exports['default'];
+
+/***/ },
+/* 187 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _MessageFormJsx = __webpack_require__(188);
+
+	var _MessageFormJsx2 = _interopRequireDefault(_MessageFormJsx);
+
+	var _MessageListJsx = __webpack_require__(189);
+
+	var _MessageListJsx2 = _interopRequireDefault(_MessageListJsx);
+
+	var MessageSection = (function (_Component) {
+	  _inherits(MessageSection, _Component);
+
+	  function MessageSection() {
+	    _classCallCheck(this, MessageSection);
+
+	    _get(Object.getPrototypeOf(MessageSection.prototype), 'constructor', this).apply(this, arguments);
+	  }
+
+	  _createClass(MessageSection, [{
+	    key: 'render',
+	    value: function render() {
+	      var activeChannel = this.props.activeChannel;
+
+	      return _react2['default'].createElement(
+	        'div',
+	        { className: 'message-container panel panel-default' },
+	        _react2['default'].createElement(
+	          'div',
+	          { className: 'panel-heading' },
+	          _react2['default'].createElement(
+	            'strong',
+	            null,
+	            activeChannel.name
+	          )
+	        ),
+	        _react2['default'].createElement(
+	          'div',
+	          { className: 'panel-body messages' },
+	          _react2['default'].createElement(_MessageListJsx2['default'], this.props),
+	          _react2['default'].createElement(_MessageFormJsx2['default'], this.props)
+	        )
+	      );
+	    }
+	  }]);
+
+	  return MessageSection;
+	})(_react.Component);
+
+	MessageSection.propTypes = {
+	  messages: _react2['default'].PropTypes.array.isRequired,
+	  activeChannel: _react2['default'].PropTypes.object.isRequired,
+	  addMessage: _react2['default'].PropTypes.func.isRequired
+	};
+
+	exports['default'] = MessageSection;
+	module.exports = exports['default'];
+
+/***/ },
+/* 188 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var MessageForm = (function (_Component) {
+	  _inherits(MessageForm, _Component);
+
+	  function MessageForm() {
+	    _classCallCheck(this, MessageForm);
+
+	    _get(Object.getPrototypeOf(MessageForm.prototype), 'constructor', this).apply(this, arguments);
+	  }
+
+	  _createClass(MessageForm, [{
+	    key: 'onSubmit',
+	    value: function onSubmit(e) {
+	      e.preventDefault();
+	      var node = this.refs.message;
+	      var message = node.value;
+	      this.props.addMessage(message);
+	      node.value = '';
+	    }
+	  }, {
+	    key: 'render',
+	    value: function render() {
+	      var input = undefined;
+	      if (this.props.activeChannel.id !== undefined) {
+	        input = _react2['default'].createElement('input', {
+	          ref: 'message',
+	          type: 'text',
+	          className: 'form-control',
+	          placeholder: 'Type Message here...'
+	        });
+	      }
+
+	      return _react2['default'].createElement(
+	        'form',
+	        { onSubmit: this.onSubmit.bind(this) },
+	        _react2['default'].createElement(
+	          'div',
+	          { className: 'form-group' },
+	          input
+	        )
+	      );
+	    }
+	  }]);
+
+	  return MessageForm;
+	})(_react.Component);
+
+	MessageForm.propTypes = {
+	  activeChannel: _react2['default'].PropTypes.object.isRequired,
+	  addMessage: _react2['default'].PropTypes.func.isRequired
+	};
+
+	exports['default'] = MessageForm;
+	module.exports = exports['default'];
+
+/***/ },
+/* 189 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _MessageJsx = __webpack_require__(190);
+
+	var _MessageJsx2 = _interopRequireDefault(_MessageJsx);
+
+	var MessageList = (function (_Component) {
+	  _inherits(MessageList, _Component);
+
+	  function MessageList() {
+	    _classCallCheck(this, MessageList);
+
+	    _get(Object.getPrototypeOf(MessageList.prototype), 'constructor', this).apply(this, arguments);
+	  }
+
+	  _createClass(MessageList, [{
+	    key: 'render',
+	    value: function render() {
+	      return _react2['default'].createElement(
+	        'ul',
+	        null,
+	        this.props.messages.map(function (message) {
+	          return _react2['default'].createElement(_MessageJsx2['default'], {
+	            key: message.id,
+	            message: message
+	          });
+	        })
+	      );
+	    }
+	  }]);
+
+	  return MessageList;
+	})(_react.Component);
+
+	MessageList.propTypes = {
+	  messages: _react2['default'].PropTypes.array.isRequired
+	};
+
+	exports['default'] = MessageList;
+	module.exports = exports['default'];
+
+/***/ },
+/* 190 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _fecha = __webpack_require__(191);
+
+	var _fecha2 = _interopRequireDefault(_fecha);
+
+	var Message = (function (_Component) {
+	  _inherits(Message, _Component);
+
+	  function Message() {
+	    _classCallCheck(this, Message);
+
+	    _get(Object.getPrototypeOf(Message.prototype), 'constructor', this).apply(this, arguments);
+	  }
+
+	  _createClass(Message, [{
+	    key: 'render',
+	    value: function render() {
+	      var message = this.props.message;
+
+	      var createdAt = _fecha2['default'].format(message.createdAt, 'HH:mm:ss M/D/YY');
+
+	      return _react2['default'].createElement(
+	        'li',
+	        { className: 'message' },
+	        _react2['default'].createElement(
+	          'div',
+	          { className: 'author' },
+	          _react2['default'].createElement(
+	            'strong',
+	            null,
+	            message.author
+	          ),
+	          _react2['default'].createElement(
+	            'i',
+	            { className: 'timestamp' },
+	            createdAt
+	          )
+	        ),
+	        _react2['default'].createElement(
+	          'div',
+	          { className: 'body' },
+	          message.body
+	        )
+	      );
+	    }
+	  }]);
+
+	  return Message;
+	})(_react.Component);
+
+	Message.propTypes = {
+	  message: _react2['default'].PropTypes.object.isRequired
+	};
+
+	exports['default'] = Message;
+	module.exports = exports['default'];
+
+/***/ },
+/* 191 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_RESULT__;(function (main) {
+	  'use strict';
+
+	  /**
+	   * Parse or format dates
+	   * @class fecha
+	   */
+	  var fecha = {};
+	  var token = /d{1,4}|M{1,4}|YY(?:YY)?|S{1,3}|Do|ZZ|([HhMsDm])\1?|[aA]|"[^"]*"|'[^']*'/g;
+	  var twoDigits = /\d\d?/;
+	  var threeDigits = /\d{3}/;
+	  var fourDigits = /\d{4}/;
+	  var word = /[0-9]*['a-z\u00A0-\u05FF\u0700-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+|[\u0600-\u06FF\/]+(\s*?[\u0600-\u06FF]+){1,2}/i;
+	  var literal = /\[([^]*?)\]/gm;
+	  var noop = function () {
+	  };
+
+	  function shorten(arr, sLen) {
+	    var newArr = [];
+	    for (var i = 0, len = arr.length; i < len; i++) {
+	      newArr.push(arr[i].substr(0, sLen));
+	    }
+	    return newArr;
+	  }
+
+	  function monthUpdate(arrName) {
+	    return function (d, v, i18n) {
+	      var index = i18n[arrName].indexOf(v.charAt(0).toUpperCase() + v.substr(1).toLowerCase());
+	      if (~index) {
+	        d.month = index;
+	      }
+	    };
+	  }
+
+	  function pad(val, len) {
+	    val = String(val);
+	    len = len || 2;
+	    while (val.length < len) {
+	      val = '0' + val;
+	    }
+	    return val;
+	  }
+
+	  var dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+	  var monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+	  var monthNamesShort = shorten(monthNames, 3);
+	  var dayNamesShort = shorten(dayNames, 3);
+	  fecha.i18n = {
+	    dayNamesShort: dayNamesShort,
+	    dayNames: dayNames,
+	    monthNamesShort: monthNamesShort,
+	    monthNames: monthNames,
+	    amPm: ['am', 'pm'],
+	    DoFn: function DoFn(D) {
+	      return D + ['th', 'st', 'nd', 'rd'][D % 10 > 3 ? 0 : (D - D % 10 !== 10) * D % 10];
+	    }
+	  };
+
+	  var formatFlags = {
+	    D: function(dateObj) {
+	      return dateObj.getDate();
+	    },
+	    DD: function(dateObj) {
+	      return pad(dateObj.getDate());
+	    },
+	    Do: function(dateObj, i18n) {
+	      return i18n.DoFn(dateObj.getDate());
+	    },
+	    d: function(dateObj) {
+	      return dateObj.getDay();
+	    },
+	    dd: function(dateObj) {
+	      return pad(dateObj.getDay());
+	    },
+	    ddd: function(dateObj, i18n) {
+	      return i18n.dayNamesShort[dateObj.getDay()];
+	    },
+	    dddd: function(dateObj, i18n) {
+	      return i18n.dayNames[dateObj.getDay()];
+	    },
+	    M: function(dateObj) {
+	      return dateObj.getMonth() + 1;
+	    },
+	    MM: function(dateObj) {
+	      return pad(dateObj.getMonth() + 1);
+	    },
+	    MMM: function(dateObj, i18n) {
+	      return i18n.monthNamesShort[dateObj.getMonth()];
+	    },
+	    MMMM: function(dateObj, i18n) {
+	      return i18n.monthNames[dateObj.getMonth()];
+	    },
+	    YY: function(dateObj) {
+	      return String(dateObj.getFullYear()).substr(2);
+	    },
+	    YYYY: function(dateObj) {
+	      return dateObj.getFullYear();
+	    },
+	    h: function(dateObj) {
+	      return dateObj.getHours() % 12 || 12;
+	    },
+	    hh: function(dateObj) {
+	      return pad(dateObj.getHours() % 12 || 12);
+	    },
+	    H: function(dateObj) {
+	      return dateObj.getHours();
+	    },
+	    HH: function(dateObj) {
+	      return pad(dateObj.getHours());
+	    },
+	    m: function(dateObj) {
+	      return dateObj.getMinutes();
+	    },
+	    mm: function(dateObj) {
+	      return pad(dateObj.getMinutes());
+	    },
+	    s: function(dateObj) {
+	      return dateObj.getSeconds();
+	    },
+	    ss: function(dateObj) {
+	      return pad(dateObj.getSeconds());
+	    },
+	    S: function(dateObj) {
+	      return Math.round(dateObj.getMilliseconds() / 100);
+	    },
+	    SS: function(dateObj) {
+	      return pad(Math.round(dateObj.getMilliseconds() / 10), 2);
+	    },
+	    SSS: function(dateObj) {
+	      return pad(dateObj.getMilliseconds(), 3);
+	    },
+	    a: function(dateObj, i18n) {
+	      return dateObj.getHours() < 12 ? i18n.amPm[0] : i18n.amPm[1];
+	    },
+	    A: function(dateObj, i18n) {
+	      return dateObj.getHours() < 12 ? i18n.amPm[0].toUpperCase() : i18n.amPm[1].toUpperCase();
+	    },
+	    ZZ: function(dateObj) {
+	      var o = dateObj.getTimezoneOffset();
+	      return (o > 0 ? '-' : '+') + pad(Math.floor(Math.abs(o) / 60) * 100 + Math.abs(o) % 60, 4);
+	    }
+	  };
+
+	  var parseFlags = {
+	    D: [twoDigits, function (d, v) {
+	      d.day = v;
+	    }],
+	    Do: [new RegExp(twoDigits.source + word.source), function (d, v) {
+	      d.day = parseInt(v, 10);
+	    }],
+	    M: [twoDigits, function (d, v) {
+	      d.month = v - 1;
+	    }],
+	    YY: [twoDigits, function (d, v) {
+	      var da = new Date(), cent = +('' + da.getFullYear()).substr(0, 2);
+	      d.year = '' + (v > 68 ? cent - 1 : cent) + v;
+	    }],
+	    h: [twoDigits, function (d, v) {
+	      d.hour = v;
+	    }],
+	    m: [twoDigits, function (d, v) {
+	      d.minute = v;
+	    }],
+	    s: [twoDigits, function (d, v) {
+	      d.second = v;
+	    }],
+	    YYYY: [fourDigits, function (d, v) {
+	      d.year = v;
+	    }],
+	    S: [/\d/, function (d, v) {
+	      d.millisecond = v * 100;
+	    }],
+	    SS: [/\d{2}/, function (d, v) {
+	      d.millisecond = v * 10;
+	    }],
+	    SSS: [threeDigits, function (d, v) {
+	      d.millisecond = v;
+	    }],
+	    d: [twoDigits, noop],
+	    ddd: [word, noop],
+	    MMM: [word, monthUpdate('monthNamesShort')],
+	    MMMM: [word, monthUpdate('monthNames')],
+	    a: [word, function (d, v, i18n) {
+	      var val = v.toLowerCase();
+	      if (val === i18n.amPm[0]) {
+	        d.isPm = false;
+	      } else if (val === i18n.amPm[1]) {
+	        d.isPm = true;
+	      }
+	    }],
+	    ZZ: [/[\+\-]\d\d:?\d\d/, function (d, v) {
+	      var parts = (v + '').match(/([\+\-]|\d\d)/gi), minutes;
+
+	      if (parts) {
+	        minutes = +(parts[1] * 60) + parseInt(parts[2], 10);
+	        d.timezoneOffset = parts[0] === '+' ? minutes : -minutes;
+	      }
+	    }]
+	  };
+	  parseFlags.dd = parseFlags.d;
+	  parseFlags.dddd = parseFlags.ddd;
+	  parseFlags.DD = parseFlags.D;
+	  parseFlags.mm = parseFlags.m;
+	  parseFlags.hh = parseFlags.H = parseFlags.HH = parseFlags.h;
+	  parseFlags.MM = parseFlags.M;
+	  parseFlags.ss = parseFlags.s;
+	  parseFlags.A = parseFlags.a;
+
+
+	  // Some common format strings
+	  fecha.masks = {
+	    'default': 'ddd MMM DD YYYY HH:mm:ss',
+	    shortDate: 'M/D/YY',
+	    mediumDate: 'MMM D, YYYY',
+	    longDate: 'MMMM D, YYYY',
+	    fullDate: 'dddd, MMMM D, YYYY',
+	    shortTime: 'HH:mm',
+	    mediumTime: 'HH:mm:ss',
+	    longTime: 'HH:mm:ss.SSS'
+	  };
+
+	  /***
+	   * Format a date
+	   * @method format
+	   * @param {Date|number} dateObj
+	   * @param {string} mask Format of the date, i.e. 'mm-dd-yy' or 'shortDate'
+	   */
+	  fecha.format = function (dateObj, mask, i18nSettings) {
+	    var i18n = i18nSettings || fecha.i18n;
+
+	    if (typeof dateObj === 'number') {
+	      dateObj = new Date(dateObj);
+	    }
+
+	    if (Object.prototype.toString.call(dateObj) !== '[object Date]' || isNaN(dateObj.getTime())) {
+	      throw new Error('Invalid Date in fecha.format');
+	    }
+
+	    mask = fecha.masks[mask] || mask || fecha.masks['default'];
+
+	    var literals = [];
+
+	    // Make literals inactive by replacing them with ??
+	    mask = mask.replace(literal, function($0, $1) {
+	      literals.push($1);
+	      return '??';
+	    });
+	    // Apply formatting rules
+	    mask = mask.replace(token, function ($0) {
+	      return $0 in formatFlags ? formatFlags[$0](dateObj, i18n) : $0.slice(1, $0.length - 1);
+	    });
+	    // Inline literal values back into the formatted value
+	    return mask.replace(/\?\?/g, function() {
+	      return literals.shift();
+	    });
+	  };
+
+	  /**
+	   * Parse a date string into an object, changes - into /
+	   * @method parse
+	   * @param {string} dateStr Date string
+	   * @param {string} format Date parse format
+	   * @returns {Date|boolean}
+	   */
+	  fecha.parse = function (dateStr, format, i18nSettings) {
+	    var i18n = i18nSettings || fecha.i18n;
+
+	    if (typeof format !== 'string') {
+	      throw new Error('Invalid format in fecha.parse');
+	    }
+
+	    format = fecha.masks[format] || format;
+
+	    // Avoid regular expression denial of service, fail early for really long strings
+	    // https://www.owasp.org/index.php/Regular_expression_Denial_of_Service_-_ReDoS
+	    if (dateStr.length > 1000) {
+	      return false;
+	    }
+
+	    var isValid = true;
+	    var dateInfo = {};
+	    format.replace(token, function ($0) {
+	      if (parseFlags[$0]) {
+	        var info = parseFlags[$0];
+	        var index = dateStr.search(info[0]);
+	        if (!~index) {
+	          isValid = false;
+	        } else {
+	          dateStr.replace(info[0], function (result) {
+	            info[1](dateInfo, result, i18n);
+	            dateStr = dateStr.substr(index + result.length);
+	            return result;
+	          });
+	        }
+	      }
+
+	      return parseFlags[$0] ? '' : $0.slice(1, $0.length - 1);
+	    });
+
+	    if (!isValid) {
+	      return false;
+	    }
+
+	    var today = new Date();
+	    if (dateInfo.isPm === true && dateInfo.hour != null && +dateInfo.hour !== 12) {
+	      dateInfo.hour = +dateInfo.hour + 12;
+	    } else if (dateInfo.isPm === false && +dateInfo.hour === 12) {
+	      dateInfo.hour = 0;
+	    }
+
+	    var date;
+	    if (dateInfo.timezoneOffset != null) {
+	      dateInfo.minute = +(dateInfo.minute || 0) - +dateInfo.timezoneOffset;
+	      date = new Date(Date.UTC(dateInfo.year || today.getFullYear(), dateInfo.month || 0, dateInfo.day || 1,
+	        dateInfo.hour || 0, dateInfo.minute || 0, dateInfo.second || 0, dateInfo.millisecond || 0));
+	    } else {
+	      date = new Date(dateInfo.year || today.getFullYear(), dateInfo.month || 0, dateInfo.day || 1,
+	        dateInfo.hour || 0, dateInfo.minute || 0, dateInfo.second || 0, dateInfo.millisecond || 0);
+	    }
+	    return date;
+	  };
+
+	  /* istanbul ignore next */
+	  if (typeof module !== 'undefined' && module.exports) {
+	    module.exports = fecha;
+	  } else if (true) {
+	    !(__WEBPACK_AMD_DEFINE_RESULT__ = function () {
+	      return fecha;
+	    }.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	  } else {
+	    main.fecha = fecha;
+	  }
+	})(this);
+
+
+/***/ },
+/* 192 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	var _events = __webpack_require__(193);
+
+	var Socket = (function () {
+	  function Socket() {
+	    var ws = arguments.length <= 0 || arguments[0] === undefined ? new WebSocket() : arguments[0];
+	    var ee = arguments.length <= 1 || arguments[1] === undefined ? new _events.EventEmitter() : arguments[1];
+
+	    _classCallCheck(this, Socket);
+
+	    this.ws = ws;
+	    this.ee = ee;
+
+	    ws.onmessage = this.message.bind(this);
+	    ws.onopen = this.open.bind(this);
+	    ws.onclose = this.close.bind(this);
+	  }
+
+	  _createClass(Socket, [{
+	    key: 'on',
+	    value: function on(name, fn) {
+	      this.ee.on(name, fn);
+	    }
+	  }, {
+	    key: 'off',
+	    value: function off(name, fn) {
+	      this.ee.removeListener(name, fn);
+	    }
+	  }, {
+	    key: 'emit',
+	    value: function emit(name, data) {
+	      var message = JSON.stringify({ name: name, data: data });
+	      this.ws.send(message);
+	    }
+	  }, {
+	    key: 'message',
+	    value: function message(e) {
+	      // const event = JSON.parse(e.data);
+	      // if(event.name === 'channel add'){
+	      //   this.newChannel(event.data);
+	      // }
+	      try {
+	        var message = JSON.parse(e.data);
+	        this.ee.emit(message.name, message.data);
+	      } catch (err) {
+	        this.ee.emit('error', err);
+	      }
+	    }
+	  }, {
+	    key: 'open',
+	    value: function open() {
+	      // this.setState({connected: true});
+	      this.ee.emit('connected');
+	    }
+	  }, {
+	    key: 'close',
+	    value: function close() {
+	      // this.setState({connected: false});
+	      this.ee.emit('dis-connected');
+	    }
+	  }]);
+
+	  return Socket;
+	})();
+
+	exports['default'] = Socket;
+	module.exports = exports['default'];
+
+/***/ },
+/* 193 */
+/***/ function(module, exports) {
+
+	// Copyright Joyent, Inc. and other Node contributors.
+	//
+	// Permission is hereby granted, free of charge, to any person obtaining a
+	// copy of this software and associated documentation files (the
+	// "Software"), to deal in the Software without restriction, including
+	// without limitation the rights to use, copy, modify, merge, publish,
+	// distribute, sublicense, and/or sell copies of the Software, and to permit
+	// persons to whom the Software is furnished to do so, subject to the
+	// following conditions:
+	//
+	// The above copyright notice and this permission notice shall be included
+	// in all copies or substantial portions of the Software.
+	//
+	// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+	// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+	// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+	// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+	// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+	// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+	// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+	function EventEmitter() {
+	  this._events = this._events || {};
+	  this._maxListeners = this._maxListeners || undefined;
+	}
+	module.exports = EventEmitter;
+
+	// Backwards-compat with node 0.10.x
+	EventEmitter.EventEmitter = EventEmitter;
+
+	EventEmitter.prototype._events = undefined;
+	EventEmitter.prototype._maxListeners = undefined;
+
+	// By default EventEmitters will print a warning if more than 10 listeners are
+	// added to it. This is a useful default which helps finding memory leaks.
+	EventEmitter.defaultMaxListeners = 10;
+
+	// Obviously not all Emitters should be limited to 10. This function allows
+	// that to be increased. Set to zero for unlimited.
+	EventEmitter.prototype.setMaxListeners = function(n) {
+	  if (!isNumber(n) || n < 0 || isNaN(n))
+	    throw TypeError('n must be a positive number');
+	  this._maxListeners = n;
+	  return this;
+	};
+
+	EventEmitter.prototype.emit = function(type) {
+	  var er, handler, len, args, i, listeners;
+
+	  if (!this._events)
+	    this._events = {};
+
+	  // If there is no 'error' event listener then throw.
+	  if (type === 'error') {
+	    if (!this._events.error ||
+	        (isObject(this._events.error) && !this._events.error.length)) {
+	      er = arguments[1];
+	      if (er instanceof Error) {
+	        throw er; // Unhandled 'error' event
+	      } else {
+	        // At least give some kind of context to the user
+	        var err = new Error('Uncaught, unspecified "error" event. (' + er + ')');
+	        err.context = er;
+	        throw err;
+	      }
+	    }
+	  }
+
+	  handler = this._events[type];
+
+	  if (isUndefined(handler))
+	    return false;
+
+	  if (isFunction(handler)) {
+	    switch (arguments.length) {
+	      // fast cases
+	      case 1:
+	        handler.call(this);
+	        break;
+	      case 2:
+	        handler.call(this, arguments[1]);
+	        break;
+	      case 3:
+	        handler.call(this, arguments[1], arguments[2]);
+	        break;
+	      // slower
+	      default:
+	        args = Array.prototype.slice.call(arguments, 1);
+	        handler.apply(this, args);
+	    }
+	  } else if (isObject(handler)) {
+	    args = Array.prototype.slice.call(arguments, 1);
+	    listeners = handler.slice();
+	    len = listeners.length;
+	    for (i = 0; i < len; i++)
+	      listeners[i].apply(this, args);
+	  }
+
+	  return true;
+	};
+
+	EventEmitter.prototype.addListener = function(type, listener) {
+	  var m;
+
+	  if (!isFunction(listener))
+	    throw TypeError('listener must be a function');
+
+	  if (!this._events)
+	    this._events = {};
+
+	  // To avoid recursion in the case that type === "newListener"! Before
+	  // adding it to the listeners, first emit "newListener".
+	  if (this._events.newListener)
+	    this.emit('newListener', type,
+	              isFunction(listener.listener) ?
+	              listener.listener : listener);
+
+	  if (!this._events[type])
+	    // Optimize the case of one listener. Don't need the extra array object.
+	    this._events[type] = listener;
+	  else if (isObject(this._events[type]))
+	    // If we've already got an array, just append.
+	    this._events[type].push(listener);
+	  else
+	    // Adding the second element, need to change to array.
+	    this._events[type] = [this._events[type], listener];
+
+	  // Check for listener leak
+	  if (isObject(this._events[type]) && !this._events[type].warned) {
+	    if (!isUndefined(this._maxListeners)) {
+	      m = this._maxListeners;
+	    } else {
+	      m = EventEmitter.defaultMaxListeners;
+	    }
+
+	    if (m && m > 0 && this._events[type].length > m) {
+	      this._events[type].warned = true;
+	      console.error('(node) warning: possible EventEmitter memory ' +
+	                    'leak detected. %d listeners added. ' +
+	                    'Use emitter.setMaxListeners() to increase limit.',
+	                    this._events[type].length);
+	      if (typeof console.trace === 'function') {
+	        // not supported in IE 10
+	        console.trace();
+	      }
+	    }
+	  }
+
+	  return this;
+	};
+
+	EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+
+	EventEmitter.prototype.once = function(type, listener) {
+	  if (!isFunction(listener))
+	    throw TypeError('listener must be a function');
+
+	  var fired = false;
+
+	  function g() {
+	    this.removeListener(type, g);
+
+	    if (!fired) {
+	      fired = true;
+	      listener.apply(this, arguments);
+	    }
+	  }
+
+	  g.listener = listener;
+	  this.on(type, g);
+
+	  return this;
+	};
+
+	// emits a 'removeListener' event iff the listener was removed
+	EventEmitter.prototype.removeListener = function(type, listener) {
+	  var list, position, length, i;
+
+	  if (!isFunction(listener))
+	    throw TypeError('listener must be a function');
+
+	  if (!this._events || !this._events[type])
+	    return this;
+
+	  list = this._events[type];
+	  length = list.length;
+	  position = -1;
+
+	  if (list === listener ||
+	      (isFunction(list.listener) && list.listener === listener)) {
+	    delete this._events[type];
+	    if (this._events.removeListener)
+	      this.emit('removeListener', type, listener);
+
+	  } else if (isObject(list)) {
+	    for (i = length; i-- > 0;) {
+	      if (list[i] === listener ||
+	          (list[i].listener && list[i].listener === listener)) {
+	        position = i;
+	        break;
+	      }
+	    }
+
+	    if (position < 0)
+	      return this;
+
+	    if (list.length === 1) {
+	      list.length = 0;
+	      delete this._events[type];
+	    } else {
+	      list.splice(position, 1);
+	    }
+
+	    if (this._events.removeListener)
+	      this.emit('removeListener', type, listener);
+	  }
+
+	  return this;
+	};
+
+	EventEmitter.prototype.removeAllListeners = function(type) {
+	  var key, listeners;
+
+	  if (!this._events)
+	    return this;
+
+	  // not listening for removeListener, no need to emit
+	  if (!this._events.removeListener) {
+	    if (arguments.length === 0)
+	      this._events = {};
+	    else if (this._events[type])
+	      delete this._events[type];
+	    return this;
+	  }
+
+	  // emit removeListener for all listeners on all events
+	  if (arguments.length === 0) {
+	    for (key in this._events) {
+	      if (key === 'removeListener') continue;
+	      this.removeAllListeners(key);
+	    }
+	    this.removeAllListeners('removeListener');
+	    this._events = {};
+	    return this;
+	  }
+
+	  listeners = this._events[type];
+
+	  if (isFunction(listeners)) {
+	    this.removeListener(type, listeners);
+	  } else if (listeners) {
+	    // LIFO order
+	    while (listeners.length)
+	      this.removeListener(type, listeners[listeners.length - 1]);
+	  }
+	  delete this._events[type];
+
+	  return this;
+	};
+
+	EventEmitter.prototype.listeners = function(type) {
+	  var ret;
+	  if (!this._events || !this._events[type])
+	    ret = [];
+	  else if (isFunction(this._events[type]))
+	    ret = [this._events[type]];
+	  else
+	    ret = this._events[type].slice();
+	  return ret;
+	};
+
+	EventEmitter.prototype.listenerCount = function(type) {
+	  if (this._events) {
+	    var evlistener = this._events[type];
+
+	    if (isFunction(evlistener))
+	      return 1;
+	    else if (evlistener)
+	      return evlistener.length;
+	  }
+	  return 0;
+	};
+
+	EventEmitter.listenerCount = function(emitter, type) {
+	  return emitter.listenerCount(type);
+	};
+
+	function isFunction(arg) {
+	  return typeof arg === 'function';
+	}
+
+	function isNumber(arg) {
+	  return typeof arg === 'number';
+	}
+
+	function isObject(arg) {
+	  return typeof arg === 'object' && arg !== null;
+	}
+
+	function isUndefined(arg) {
+	  return arg === void 0;
+	}
+
 
 /***/ }
 /******/ ]);
